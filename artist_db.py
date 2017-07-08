@@ -57,6 +57,7 @@ def add_artist_notes(s_note):
     }
     s_note.add_note(artist_notes["artists"])
     s_note.add_note(artist_notes["vips"])
+    return artist_notes
 
 
 def get_artist_notes(s_note, attempts=5):
@@ -106,8 +107,7 @@ def get_artist_notes(s_note, attempts=5):
             raise SimplenoteAPIError
         if artist_notes["artists"] and artist_notes["vips"]:
             return artist_notes
-    else:
-        add_artist_notes(s_note)
+    return add_artist_notes(s_note)
 
 
 def update_simplenote(s_note, artist_notes, original_notes):

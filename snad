@@ -8,6 +8,7 @@ Add artists to the Simplenote note databases if they're missing.
 import sys
 import copy
 import argparse
+import logging
 
 import artist_db
 

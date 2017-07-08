@@ -76,5 +76,5 @@ def main(artists=argv[1:]):
 
 
 if __name__ == "__main__":
-    assert main(["* spam* eggs* spam_(eggs)* spam* spam_(eggs)* 
+    # assert main(["* spam* eggs* spam_(eggs)* spam* spam_(eggs)*"])
     main()
