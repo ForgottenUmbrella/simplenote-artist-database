@@ -1,0 +1,96 @@
+#!/usr/bin/env python3.6
+# coding=utf-8
+"""[S]imple[N]ote [A]rtist [D]atabase
+
+Add artists to the Simplenote note databases if they're missing.
+"""
+
+import sys
+import copy
+import argparse
+
+import artist_db
+
+
+def init_parser():
+    """Return an ArgumentParser with the required arguments."""
+    argparser = argparse.ArgumentParser(
+        description="Search your Simplenotes for artists, and add them if "
+        "they're missing.")
+    argparser.add_argument(
+        "artist", nargs="+", help="An artist to search for.")
+    argparser.add_argument(
+        "-d", "--debug", action="store_true",
+        help="Don't write to Simplenote, and print variable values.")
+    return argparser
+
+
+def update_artist_notes(artist_notes, searched_artists):
+    """Add missing artists."""
+    for artist in searched_artists:
+        artist_db.logger.info(f"Searching for {artist}...")
+        artist_entry = "* " + artist
+        missing_from = {
+            "artists": artist_entry not in artist_notes["artists"]["content"],
+            "vips": artist_entry not in artist_notes["vips"]["content"],
+        }
+
+        if missing_from["artists"] and missing_from["vips"]:
+            artist_db.logger.info(f"{artist} not found.")
+            while True:
+                response = input(
+                    f"Add {artist} to database ([Y]es/[N]o/[V]ery)? ").lower()
+                if response.startswith("y"):
+                    artist_notes["artists"]["content"] += f"\n{artist_entry}"
+                    artist_db.logger.info(
+                        f"Added {artist} to artist database.")
+                    break
+                elif response.startswith("n"):
+                    artist_db.logger.info(f"Not adding {artist} to database.")
+                    break
+                elif response.startswith("v"):
+                    artist_notes["vips"]["content"] += f"\n{artist_entry}"
+                    artist_db.logger.info(f"Added {artist} to VIP database.")
+                    break
+                else:
+                    print(
+                        "Invalid response. "
+                        "Enter either 'yes', 'no' or 'very' (without quotes).")
+        else:
+            print(f"{artist} skipped.")
+
+    artist_db.logger.debug(
+        "artist_notes['artists']['content'] = "
+        f"{repr(artist_notes['artists']['content'])}")
+    artist_db.logger.debug(
+        "artist_notes['vips']['content'] = "
+        f"{repr(artist_notes['vips']['content'])}")
+
+
+def main(argv):
+    """Add missing artists to Simplenote notes."""
+    argparser = init_parser()
+    parsed_args = argparser.parse_args(argv)
+
+    debug = parsed_args.debug
+    if debug:
+        artist_db.logger.setLevel(logging.DEBUG)
+
+    searched_artists = parsed_args.artist
+    artist_db.logger.debug(f"searched_artists = {repr(searched_artists)}")
+    # If a space-delimited list as quoted string was passed...
+    if len(searched_artists) == 1:
+        searched_artists = searched_artists[0].split()
+        artist_db.logger.debug(
+            f"Actual searched_artists = {repr(searched_artists)}")
+
+    s_note = artist_db.get_simplenote()
+    artist_notes = artist_db.get_artist_notes(s_note)
+    original_notes = copy.deepcopy(artist_notes)
+    update_artist_notes(artist_notes, searched_artists)
+    if not debug:
+        artist_db.update_simplenote(s_note, artist_notes, original_notes)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
