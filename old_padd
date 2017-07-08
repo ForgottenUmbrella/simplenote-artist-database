@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+# coding=utf-8
+"""[P]urge [A]rtist [D]atabase [D]uplicates
+Remove duplicates from a "\n* " delimited list as string, including short
+bracket versions of artist names, and write to tost.txt in ~/Documents.
+
+TODO: read from the Simplenote instead of taking arguments, but optionally
+allow passing artists as a quoted string as well as a list
+
+"""
+
+from sys import argv, stdout
+from os import path
+import logging
+
+logging.basicConfig(
+    stream=stdout, level=logging.DEBUG, format="%(levelname)s: %(message)s")
+
+
+def main(artists=argv[1:]):
+    """Write artists (without duplicates) to file
+
+    `artists` must either be a quoted string representing a list separated by
+    "* " or 
+
+    """
+    logging.debug(f"artists = {repr(artists)}")
+    # If a quoted string was passed...
+    # `artists` is always a list, so to check for if a space-delimited list
+    # as a quoted string was passed, we need to test the length instead
+    # If one artist was really passed, the logic won't mess it up
+    if len(artists) == 1:
+        title, *artists = artists[0].split("* ")
+        artists = [artist.lower().strip() for artist in artists]
+    # If an unquoted list of strings was dangerously passed...
+    else:
+        # First few "artists" are just part of a title that's wrongly split
+        start = 0
+        for index, item in enumerate(artists):
+            if item.endswith("*"):
+                start = index + 1
+                logging.debug(f"start = {start}")
+                break
+        title = artists[:start]
+        artists = [artist.lower().strip("*") for artist in artists[start:]]
+    logging.debug(f"title = {repr(title)}")
+    logging.debug(f"proper artists = {repr(artists)}")
+
+    # `seen` is a list, because I'd like to conserve order
+    seen = []
+    # `bracket_seen` is a set because I only need to check if things are in it
+    brackets_seen = set()
+    for artist in artists:
+        logging.debug(f"artist = {repr(artist)}")
+        if "(" in artist and ")" in artist:
+            bracket = artist[artist.find("(")+1 : artist.find(")")]
+            brackets_seen.add(bracket)
+            logging.debug(f"bracket = {repr(bracket)}")
+            if bracket in seen:
+                seen.remove(bracket)
+                logging.info(f"{bracket} already seen, removed seen instance")
+        if artist not in brackets_seen and artist not in seen:
+            seen.append(artist)
+            logging.info(f"{artist} not yet seen, added")
+        else:
+            logging.info(f"{artist} already seen, ignored")
+
+    artists_no_dupes = "\n".join(seen)
+    new_note = f"{title}\n{artists_no_dupes}"
+    logging.debug(f"new_note = {repr(new_note)}")
+    filepath = path.expanduser(path.join("~", "Documents", "tost.txt"))
+    logging.debug(f"filepath = {filepath}")
+    with open(filepath, "w") as file:
+        file.write(new_note)
+    print(new_note)
+
+
+if __name__ == "__main__":
+    # assert main(["* spam* eggs* spam_(eggs)* spam* spam_(eggs)*"])
+    main()

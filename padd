@@ -1,80 +1,60 @@
 #!/usr/bin/env python3
 # coding=utf-8
 """[P]urge [A]rtist [D]atabase [D]uplicates
-Remove duplicates from a "\n* " delimited list as string, including short
-bracket versions of artist names, and write to tost.txt in ~/Documents.
-
-TODO: read from the Simplenote instead of taking arguments, but optionally
-allow passing artists as a quoted string as well as a list
-
+Remove duplicates from the Simplenote artist database.
 """
 
-from sys import argv, stdout
-from os import path
+import sys
+import os
+import copy
 import logging
 
+import artist_db
+
 logging.basicConfig(
-    stream=stdout, level=logging.DEBUG, format="%(levelname)s: %(message)s")
+    stream=sys.stdout, level=logging.DEBUG,
+    format="%(levelname)s: %(message)s")
 
 
-def main(artists=argv[1:]):
-    """Write artists (without duplicates) to file
-
-    `artists` must either be a quoted string representing a list separated by
-    "* " or 
-
-    """
-    logging.debug(f"artists = {repr(artists)}")
-    # If a quoted string was passed...
-    # `artists` is always a list, so to check for if a space-delimited list
-    # as a quoted string was passed, we need to test the length instead
-    # If one artist was really passed, the logic won't mess it up
-    if len(artists) == 1:
-        title, *artists = artists[0].split("* ")
-        artists = [artist.lower().strip() for artist in artists]
-    # If an unquoted list of strings was dangerously passed...
-    else:
-        # First few "artists" are just part of a title that's wrongly split
-        start = 0
-        for index, item in enumerate(artists):
-            if item.endswith("*"):
-                start = index + 1
-                logging.debug(f"start = {start}")
-                break
-        title = artists[:start]
-        artists = [artist.lower().strip("*") for artist in artists[start:]]
-    logging.debug(f"title = {repr(title)}")
-    logging.debug(f"proper artists = {repr(artists)}")
-
-    # `seen` is a list, because I'd like to conserve order
+def sort_uniq(lst):
+    """Return `lst`, with duplicates removed."""
     seen = []
-    # `bracket_seen` is a set because I only need to check if things are in it
+    # Sets are fast.
     brackets_seen = set()
-    for artist in artists:
-        logging.debug(f"artist = {repr(artist)}")
-        if "(" in artist and ")" in artist:
-            bracket = artist[artist.find("(")+1 : artist.find(")")]
+    for item in lst:
+        logging.debug(f"item = {repr(item)}")
+        if "(" in item and ")" in item:
+            bracket = item[item.find("(")+1 : item.find(")")]
             brackets_seen.add(bracket)
             logging.debug(f"bracket = {repr(bracket)}")
             if bracket in seen:
                 seen.remove(bracket)
-                logging.info(f"{bracket} already seen, removed seen instance")
-        if artist not in brackets_seen and artist not in seen:
-            seen.append(artist)
-            logging.info(f"{artist} not yet seen, added")
+                logging.info(f"{bracket} already seen, removed")
+        if item not in brackets_seen and item not in seen:
+            seen.append(item)
+            logging.info(f"{item} not yet seen, added")
         else:
-            logging.info(f"{artist} already seen, ignored")
+            logging.info(f"{item} already seen, ignored")
+    return seen
 
-    artists_no_dupes = "\n".join(seen)
-    new_note = f"{title}\n{artists_no_dupes}"
-    logging.debug(f"new_note = {repr(new_note)}")
-    filepath = path.expanduser(path.join("~", "Documents", "tost.txt"))
-    logging.debug(f"filepath = {filepath}")
-    with open(filepath, "w") as file:
-        file.write(new_note)
-    print(new_note)
+
+def main():
+    """Remove duplicates from Simplenotes."""
+    s_note = artist_db.get_simplenote()
+    artist_notes = artist_db.get_artist_notes(s_note)
+    original_notes = copy.deepcopy(artist_notes)
+    logging.debug(f"artist_notes = {repr(artist_notes)}")
+    SEPARATOR = "\n* "
+    for i in artist_notes:
+        title, *artists = artist_notes[i]["content"].split(SEPARATOR)
+        artists = [artist.lower.strip() for artist in artists]
+        logging.debug(f"title = {repr(title)}")
+        logging.debug(f"proper artists = {repr(artists)}")
+        artists = SEPARATOR.join(sort_uniq(artists))
+        artist_notes[i]["content"] = f"{title}\n{artists}"
+        logging.debug(f"artist_notes[{i}] = {repr(artist_notes[i])}")
+    artist_db.update_simplenote(s_note, artist_notes, original_notes)
 
 
 if __name__ == "__main__":
-    # assert main(["* spam* eggs* spam_(eggs)* spam* spam_(eggs)*"])
     main()
