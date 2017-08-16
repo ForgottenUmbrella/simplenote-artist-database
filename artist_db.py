@@ -15,7 +15,7 @@ logger.addHandler(handler)
 NOTE_TITLES = {
     "artists": "# Danbooru Artists",
     "vips": "# Danbooru VIPs",
-}
+    }
 TAGS = ["danbooru"]
 
 
@@ -28,7 +28,8 @@ def get_simplenote(attempts=5):
         logger.debug(exception)
         logger.info(
             "Consider saving the password in an environmental variable as "
-            "SN_PSWD.")
+            "SN_PSWD."
+            )
         for _ in range(attempts):
             password = getpass.getpass()
             s_note = simplenote.Simplenote(username, password)
@@ -49,12 +50,12 @@ def add_artist_notes(s_note):
         "artists": {
             "content": NOTE_TITLES["artists"],
             "tags": TAGS,
-        },
+            },
         "vips": {
             "content": NOTE_TITLES["vips"],
             "tags": TAGS,
-        },
-    }
+            },
+        }
     s_note.add_note(artist_notes["artists"])
     s_note.add_note(artist_notes["vips"])
     return artist_notes
@@ -65,10 +66,11 @@ def get_artist_notes(s_note, attempts=5):
     artist_notes = {
         "artists": None,
         "vips": None,
-    }
+        }
     FAIL = -1
     SimplenoteAPIError = OSError(
-        "Failed to access API - is Internet available?")
+        "Failed to access API - is Internet available?"
+        )
 
     logger.info("Getting notes list...")
     print("Please wait...")
@@ -96,13 +98,15 @@ def get_artist_notes(s_note, attempts=5):
             (artist_notes["artists"], status) = s_note.get_note(note["key"])
             logger.debug(
                 "artist_notes['artists']['content'] = "
-                f"{repr(artist_notes['artists']['content'])}")
+                f"{repr(artist_notes['artists']['content'])}"
+                )
         elif note_title == NOTE_TITLES["vips"]:
             logger.info(f"Getting full {NOTE_TITLES['vips']} note...")
             (artist_notes["vips"], status) = s_note.get_note(note["key"])
             logger.debug(
                 "artist_notes['vips']['content'] = "
-                f"{repr(artist_notes['vips']['content'])}")
+                f"{repr(artist_notes['vips']['content'])}"
+                )
         if status == FAIL:
             raise SimplenoteAPIError
         if artist_notes["artists"] and artist_notes["vips"]:
@@ -116,11 +120,11 @@ def update_simplenote(s_note, artist_notes, original_notes):
     paths = {
         "artists": os.path.join(script_directory, "artists.txt"),
         "vips": os.path.join(script_directory, "vips.txt"),
-    }
+        }
     is_modified = {
         "artists": artist_notes["artists"] != original_notes["artists"],
         "vips": artist_notes["vips"] != original_notes["vips"],
-    }
+        }
 
     if any(is_modified.values()):
         print("Please wait...")

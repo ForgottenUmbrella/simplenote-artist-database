@@ -13,7 +13,8 @@ import artist_db
 
 logging.basicConfig(
     stream=sys.stdout, level=logging.DEBUG,
-    format="%(levelname)s: %(message)s")
+    format="%(levelname)s: %(message)s"
+    )
 
 
 def sort_uniq(lst):
